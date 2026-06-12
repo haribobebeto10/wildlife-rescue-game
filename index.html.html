@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐣 아기 새 구조 게임 — 야생동물 구조 교육</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green-dark:  #1b5e20;
+      --green-mid:   #388e3c;
+      --green-light: #a5d6a7;
+      --green-pale:  #e8f5e9;
+      --brown:       #795548;
+      --sky:         #87CEEB;
+      --grass:       #8BC34A;
+      --red-hp:      #e53935;
+      --white:       #ffffff;
+      --text-main:   #1a2b1a;
+      --text-muted:  #555;
+      --radius-md:   10px;
+      --radius-lg:   18px;
+      --shadow:      0 4px 24px rgba(0,0,0,0.10);
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--green-pale);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* HEADER */
+    header {
+      width: 100%;
+      background: var(--green-dark);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    }
+    header .logo { font-size: 26px; }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    header p  { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+    /* NAV BREADCRUMB */
+    nav#breadcrumb {
+      width: 100%;
+      max-width: 680px;
+      padding: 10px 20px 0;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    nav#breadcrumb span { cursor: pointer; color: var(--green-mid); }
+    nav#breadcrumb span:hover { text-decoration: underline; }
+    nav#breadcrumb .sep { opacity: 0.4; }
+
+    /* MAIN */
+    main {
+      width: 100%;
+      max-width: 680px;
+      padding: 24px 20px 60px;
+      flex: 1;
+    }
+
+    /* SCREENS */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* SECTION LABEL */
+    .section-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green-mid); color: #fff;
+      font-size: 13px; font-weight: 500;
+      padding: 6px 14px; border-radius: 20px;
+      margin-bottom: 18px;
+    }
+
+    /* ── START ── */
+    #start-screen { text-align: center; }
+    .hero-icon { font-size: 72px; margin-bottom: 12px; animation: bob 2s ease-in-out infinite; }
+    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    #start-screen h2 { font-size: 26px; font-weight: 700; color: var(--green-dark); margin-bottom: 8px; }
+    #start-screen .sub { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+    .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .choice-card {
+      background: var(--white);
+      border: 2px solid var(--green-light);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.25rem;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+      box-shadow: var(--shadow);
+    }
+    .choice-card:hover { transform: translateY(-5px); border-color: var(--green-mid); box-shadow: 0 10px 32px rgba(56,142,60,0.18); }
+    .choice-card .ci { font-size: 48px; margin-bottom: 12px; }
+    .choice-card h3 { font-size: 15px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+    .choice-card p  { font-size: 12px; color: var(--text-muted); }
+
+    /* info-nav on start */
+    .info-nav { display: flex; gap: 10px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+    .info-nav-btn {
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 1.5px solid var(--green-mid);
+      background: transparent;
+      color: var(--green-mid);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .info-nav-btn:hover { background: var(--green-mid); color: #fff; }
+
+    /* ── NESTLING ── */
+    .nestling-hint {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--green-light);
+      padding: 14px 18px;
+      font-size: 14px;
+      color: var(--green-dark);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .scene {
+      background: linear-gradient(180deg, var(--sky) 0%, var(--sky) 55%, var(--grass) 55%);
+      border-radius: var(--radius-lg);
+      height: 420px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .sun { position:absolute; top:14px; right:28px; font-size:30px; animation: spin-slow 20s linear infinite; }
+    @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .cloud { position:absolute; opacity:0.85; }
+    .cloud-1 { top:14px; left:30px; font-size:20px; animation: drift 12s ease-in-out infinite; }
+    .cloud-2 { top:30px; left:130px; font-size:16px; animation: drift 16s ease-in-out infinite reverse; }
+    .cloud-3 { top:10px; right:80px; font-size:18px; animation: drift 14s ease-in-out infinite; }
+    @keyframes drift { 0%,100%{transform:translateX(0)} 50%{transform:translateX(12px)} }
+    .tree-wrap {
+      position: absolute;
+      display: flex; flex-direction: column; align-items: center;
+      cursor: pointer;
+      transform-origin: bottom center;
+      transition: filter 0.15s;
+    }
+    .tree-wrap:hover { filter: brightness(1.18) drop-shadow(0 0 6px rgba(255,255,255,0.6)); }
+    .baby-on-ground { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); font-size:20px; z-index:3; }
+
+    /* ── FLEDGLING ── */
+    .stats-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-card .label { font-size: 12px; color: var(--text-muted); }
+    .stat-card .value { font-size: 22px; font-weight: 700; color: var(--text-main); }
+    #timer-val { color: var(--red-hp); }
+    .hp-wrap {
+      background: #fce4e4; border-radius: 20px; height: 26px;
+      overflow: hidden; margin-bottom: 16px; border: 1px solid #ef9a9a;
+    }
+    #hp-bar {
+      height: 100%; width: 100%; background: var(--red-hp);
+      border-radius: 20px; transition: width 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #hp-label { font-size: 12px; color: #fff; font-weight: 700; }
+    #battle-arena {
+      background: linear-gradient(160deg, #c8e6c9 0%, #a5d6a7 100%);
+      border-radius: var(--radius-lg);
+      height: 300px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; cursor: pointer; user-select: none;
+      box-shadow: var(--shadow); border: 2px solid var(--green-light);
+    }
+    #cat { font-size: 88px; position: absolute; z-index: 2; transition: opacity 0.08s; }
+    #cat.hit { opacity: 0.5; }
+    #bird-icon { font-size: 38px; position: absolute; bottom: 22px; right: 28px; z-index: 1; }
+    #bushes { font-size: 28px; position: absolute; bottom: 10px; left: 20px; opacity: 0.7; }
+    #tap-hint {
+      font-size: 14px; color: var(--green-dark);
+      position: absolute; bottom: 10px; left: 50%;
+      transform: translateX(-50%); font-weight: 700;
+      white-space: nowrap; z-index: 3;
+    }
+    .hit-spark {
+      position: absolute; font-size: 24px; pointer-events: none; z-index: 10;
+      animation: sparkUp 0.5s ease-out forwards;
+    }
+    @keyframes sparkUp { 0%{opacity:1;transform:translateY(0) scale(1.1)} 100%{opacity:0;transform:translateY(-50px) scale(0.4)} }
+    .danger { animation: pulse 0.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+    /* ── RESCUE TYPES SCREEN ── */
+    #rescue-screen h2 { font-size: 22px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+    #rescue-screen .desc { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .rescue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+    .rescue-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.2rem 1rem;
+      box-shadow: var(--shadow);
+      border-top: 4px solid var(--green-mid);
+    }
+    .rescue-card .r-icon { font-size: 30px; margin-bottom: 8px; }
+    .rescue-card h3 { font-size: 14px; font-weight: 700; color: var(--green-dark); margin-bottom: 5px; }
+    .rescue-card p  { font-size: 12px; color: var(--text-muted); line-height: 1.65; }
+    .rescue-card.accent { border-top-color: #e53935; }
+    .rescue-card.amber  { border-top-color: #f57c00; }
+    .rescue-card.blue   { border-top-color: #1565c0; }
+    .rescue-card.purple { border-top-color: #6a1b9a; }
+    .rescue-card.teal   { border-top-color: #00695c; }
+    .rescue-card.pink   { border-top-color: #ad1457; }
+
+    /* ── ENDANGERED SCREEN ── */
+    #endangered-screen h2 { font-size: 22px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+    #endangered-screen .desc { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .end-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .end-tab {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: inherit;
+      font-weight: 500; cursor: pointer; border: 1.5px solid var(--green-light);
+      background: transparent; color: var(--text-muted); transition: all 0.15s;
+    }
+    .end-tab.active, .end-tab:hover { background: var(--green-mid); color: #fff; border-color: var(--green-mid); }
+    .end-panel { display: none; }
+    .end-panel.active { display: block; }
+    .end-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .end-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .end-card .e-icon { font-size: 28px; flex-shrink: 0; }
+    .end-card h3 { font-size: 13px; font-weight: 700; color: var(--green-dark); margin-bottom: 3px; }
+    .end-card p  { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+    .badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px; margin-bottom: 4px;
+    }
+    .badge-red    { background: #ffcdd2; color: #c62828; }
+    .badge-orange { background: #ffe0b2; color: #e65100; }
+
+    /* ── OVERLAYS & MODALS ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.52);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px;
+    }
+    .overlay.active { display: flex; }
+    .modal {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.75rem;
+      max-width: 420px; width: 100%;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+      animation: popIn 0.25s ease-out;
+      max-height: 90vh; overflow-y: auto;
+    }
+    @keyframes popIn { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+    .modal .big-icon { font-size: 52px; margin-bottom: 12px; }
+    .modal h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .modal p  { font-size: 13px; color: var(--text-muted); line-height: 1.75; white-space: pre-line; }
+    .tip-box {
+      background: var(--green-pale);
+      border-left: 4px solid var(--green-mid);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      padding: 1rem 1.1rem; margin-top: 14px;
+      text-align: left; font-size: 13px;
+      color: var(--green-dark); line-height: 1.75;
+    }
+    .modal-actions { display:flex; gap:10px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 9px 22px; border-radius: var(--radius-md);
+      font-size: 13px; font-family: inherit; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+      border: 1.5px solid var(--green-mid);
+      background: transparent; color: var(--green-mid);
+    }
+    .btn:hover { background: var(--green-pale); }
+    .btn.primary { background: var(--green-mid); color: #fff; }
+    .btn.primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+    .btn-row { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+
+    /* success anim */
+    .success-anim { animation: flap 0.5s ease-in-out infinite alternate; display:inline-block; }
+    @keyframes flap { from{transform:translateY(0)} to{transform:translateY(-14px)} }
+
+    /* FOOTER */
+    footer {
+      width: 100%; text-align: center; padding: 18px;
+      font-size: 12px; background: var(--green-dark);
+      color: rgba(255,255,255,0.5);
+    }
+
+    @media (max-width: 480px) {
+      .choice-grid, .rescue-grid, .end-grid { grid-template-columns: 1fr; }
+      .choice-card { padding: 1.25rem 1rem; }
+      #start-screen h2 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌿</div>
+  <div>
+    <h1>아기 새 구조 게임</h1>
+    <p>야생동물을 올바르게 구조하는 방법을 배워요</p>
+  </div>
+</header>
+
+<nav id="breadcrumb"></nav>
+
+<main>
+
+  <!-- ── START ── -->
+  <div id="start-screen" class="screen active">
+    <div class="hero-icon">🐣</div>
+    <h2>아기 새를 발견했어요!</h2>
+    <p class="sub">어떤 아기 새를 발견하셨나요? 아래에서 선택하세요.</p>
+    <div class="choice-grid">
+      <div class="choice-card" onclick="startNestling()">
+        <div class="ci">🥚</div>
+        <h3>갓 부화한 새끼 새</h3>
+        <p>털이 없고 눈도 못 뜨는 아기 새예요. 둥지를 찾아 돌려보내야 해요.</p>
+      </div>
+      <div class="choice-card" onclick="startFledgling()">
+        <div class="ci">🐥</div>
+        <h3>깃털이 조금 난 아기 새</h3>
+        <p>솜털이 있고 눈을 뜬 아기 새예요. 고양이로부터 지켜야 해요!</p>
+      </div>
+    </div>
+    <div class="info-nav">
+      <button class="info-nav-btn" onclick="showRescue()">🏥 구조 유형 알아보기</button>
+      <button class="info-nav-btn" onclick="showEndangered()">🦅 천연기념물 &amp; 멸종위기종</button>
+    </div>
+  </div>
+
+  <!-- ── NESTLING ── -->
+  <div id="nestling-screen" class="screen">
+    <div class="section-label">🥚 갓 부화한 새끼 새 코스</div>
+    <div class="nestling-hint">🔍 5그루의 나무 중 <strong>둥지가 있는 나무</strong>를 찾아 클릭하세요!</div>
+    <div class="scene" id="scene">
+      <div class="sun">☀️</div>
+      <div class="cloud cloud-1">☁️</div>
+      <div class="cloud cloud-2">☁️</div>
+      <div class="cloud cloud-3">☁️</div>
+      <div class="baby-on-ground">🐣</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="goStart()">← 처음으로</button>
+    </div>
+  </div>
+
+  <!-- ── FLEDGLING ── -->
+  <div id="fledgling-screen" class="screen">
+    <div class="section-label">🐥 깃털이 조금 난 아기 새 코스</div>
+    <div class="stats-bar">
+      <div class="stat-card">
+        <span class="label">⏱ 남은 시간</span>
+        <span class="value" id="timer-val">15초</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">👆 터치 횟수</span>
+        <span class="value" id="tap-val">0 / 10</span>
+      </div>
+    </div>
+    <div class="hp-wrap"><div id="hp-bar"><span id="hp-label">고양이 체력 100%</span></div></div>
+    <div id="battle-arena" onclick="tapCat(event)">
+      <div id="cat">🐱</div>
+      <div id="bird-icon">🐥</div>
+      <div id="bushes">🌿🌿</div>
+      <div id="tap-hint">👆 고양이를 터치해서 쫓아내세요!</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="goStart()">← 처음으로</button>
+    </div>
+  </div>
+
+  <!-- ── RESCUE TYPES ── -->
+  <div id="rescue-screen" class="screen">
+    <div class="section-label">🏥 야생동물 구조 유형</div>
+    <h2>주요 구조 유형 안내</h2>
+    <p class="desc">야생동물구조센터에서 다루는 대표적인 구조 유형 7가지를 소개합니다.</p>
+    <div class="rescue-grid">
+      <div class="rescue-card">
+        <div class="r-icon">🐣</div>
+        <h3>미아</h3>
+        <p>어미를 잃거나 둥지에서 떨어진 아기 동물을 구조합니다. 임의로 데려가지 말고, 어미가 오는지 먼저 관찰하세요.</p>
+      </div>
+      <div class="rescue-card accent">
+        <div class="r-icon">🚗</div>
+        <h3>교통사고</h3>
+        <p>도로에서 차량에 치인 야생동물입니다. 다가갈 때는 2차 사고에 주의하고, 맨손 접촉은 피하세요.</p>
+      </div>
+      <div class="rescue-card amber">
+        <div class="r-icon">🪟</div>
+        <h3>충돌</h3>
+        <p>유리창·방음벽에 부딪혀 의식을 잃은 동물입니다. 어두운 상자에 넣어 조용한 곳에서 안정시키세요.</p>
+      </div>
+      <div class="rescue-card accent">
+        <div class="r-icon">🔫</div>
+        <h3>총상</h3>
+        <p>불법 포획·밀렵으로 총에 맞은 동물입니다. 반드시 신속히 구조센터에 신고해야 합니다.</p>
+      </div>
+      <div class="rescue-card blue">
+        <div class="r-icon">🪤</div>
+        <h3>덫</h3>
+        <p>올무·철망 등에 걸려 부상을 입은 동물입니다. 무리하게 제거하다 더 큰 부상이 생길 수 있으니 전문가에게 맡기세요.</p>
+      </div>
+      <div class="rescue-card purple">
+        <div class="r-icon">🪶</div>
+        <h3>깃 이식</h3>
+        <p>손상된 깃털을 교체하는 처치입니다. 비행 능력 회복을 위해 전문 수의사가 진행합니다.</p>
+      </div>
+      <div class="rescue-card pink" style="grid-column: span 2;">
+        <div class="r-icon">🦠</div>
+        <h3>바이러스 감염</h3>
+        <p>조류독감(AI) 등 전염성 질환에 걸린 동물입니다. 절대 맨손으로 만지지 말고 즉시 방역 당국과 구조센터에 신고하세요.</p>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="showEndangered()">다음: 천연기념물 &amp; 멸종위기종 →</button>
+      <button class="btn" onclick="goStart()">← 처음으로</button>
+    </div>
+  </div>
+
+  <!-- ── ENDANGERED ── -->
+  <div id="endangered-screen" class="screen">
+    <div class="section-label">🦅 보호 야생동물</div>
+    <h2>천연기념물 &amp; 멸종위기 야생동물</h2>
+    <p class="desc">우리나라에서 법으로 보호받는 주요 야생동물들을 소개합니다.</p>
+    <div class="end-tabs">
+      <button class="end-tab active" onclick="switchTab('birds')">🐦 조류</button>
+      <button class="end-tab" onclick="switchTab('mammals')">🦌 포유류</button>
+      <button class="end-tab" onclick="switchTab('others')">🐢 기타</button>
+    </div>
+
+    <!-- 조류 -->
+    <div class="end-panel active" id="panel-birds">
+      <div class="end-grid">
+        <div class="end-card">
+          <div class="e-icon">🦅</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>참수리</h3>
+            <p>독수리류 중 가장 크며 겨울철 한국을 찾는 희귀 맹금류입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦆</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>황새</h3>
+            <p>과거 전국에 서식했으나 현재 야생 개체수가 극히 적은 대형 조류입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦩</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>두루미 (단정학)</h3>
+            <p>붉은 정수리가 특징인 학으로, 철원 평야 등지에서 월동합니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦉</div>
+          <div>
+            <div class="badge badge-orange">천연기념물·멸종위기 II급</div>
+            <h3>수리부엉이</h3>
+            <p>야행성 대형 올빼미로, 귀 모양의 깃털이 인상적인 맹금류입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🐦</div>
+          <div>
+            <div class="badge badge-orange">천연기념물·멸종위기 II급</div>
+            <h3>흑두루미</h3>
+            <p>순천만 등 남해안 습지에서 겨울을 보내는 희귀 두루미류입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦋</div>
+          <div>
+            <div class="badge badge-orange">천연기념물</div>
+            <h3>까막딱따구리</h3>
+            <p>온몸이 검고 붉은 정수리를 가진 대형 딱따구리로, 원시림에 서식합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 포유류 -->
+    <div class="end-panel" id="panel-mammals">
+      <div class="end-grid">
+        <div class="end-card">
+          <div class="e-icon">🐯</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>호랑이 (백두산호랑이)</h3>
+            <p>한국의 상징 동물로 현재 야생에서는 거의 멸종 상태입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🐆</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>표범 (아무르표범)</h3>
+            <p>세계에서 가장 희귀한 고양이과 동물로 극소수만 생존합니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🐻</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>반달가슴곰</h3>
+            <p>지리산 복원 사업의 주역으로, 가슴의 반달 무늬가 특징입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦌</div>
+          <div>
+            <div class="badge badge-red">멸종위기 I급</div>
+            <h3>사향노루</h3>
+            <p>향낭을 가진 소형 사슴류로, 불법 포획으로 개체수가 급감했습니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦦</div>
+          <div>
+            <div class="badge badge-red">천연기념물·멸종위기 I급</div>
+            <h3>수달</h3>
+            <p>맑은 하천의 지표종으로, 수질 개선과 함께 개체수가 조금씩 회복 중입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🐺</div>
+          <div>
+            <div class="badge badge-red">멸종위기 I급</div>
+            <h3>늑대</h3>
+            <p>한반도에서 사실상 야생 절멸 상태로, 복원 논의가 진행 중입니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기타 -->
+    <div class="end-panel" id="panel-others">
+      <div class="end-grid">
+        <div class="end-card">
+          <div class="e-icon">🐢</div>
+          <div>
+            <div class="badge badge-red">멸종위기 I급</div>
+            <h3>붉은바다거북</h3>
+            <p>우리나라 해안에 산란하러 오는 대형 해양 거북으로 혼획 피해가 큽니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🐟</div>
+          <div>
+            <div class="badge badge-red">멸종위기 I급</div>
+            <h3>감돌고기</h3>
+            <p>금강·웅천천 등 일부 하천에만 서식하는 고유 민물고기입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦎</div>
+          <div>
+            <div class="badge badge-orange">멸종위기 II급</div>
+            <h3>맹꽁이</h3>
+            <p>장맛비가 오면 울음소리로 존재를 알리는 소형 양서류입니다.</p>
+          </div>
+        </div>
+        <div class="end-card">
+          <div class="e-icon">🦑</div>
+          <div>
+            <div class="badge badge-orange">멸종위기 II급</div>
+            <h3>나팔고둥</h3>
+            <p>제주 해역 산호초에 서식하는 대형 고둥으로 불법 채취가 금지됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-box" style="text-align:left; margin-top:20px;">
+      📞 <strong>야생동물 발견 시 신고처</strong><br><br>
+      · 국립야생동물질병관리원: <strong>1588-9060</strong><br>
+      · 각 시·도 야생동물구조관리센터<br>
+      · 환경부 자연환경과: <strong>044-201-7244</strong>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="goStart()">🎮 게임 다시 하기</button>
+      <button class="btn" onclick="showRescue()">← 구조 유형으로</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>🌿 야생동물 구조 방법 교육 게임 &nbsp;|&nbsp; 발견된 새를 함부로 데려가지 마세요</footer>
+
+<!-- OVERLAYS -->
+<div class="overlay" id="nestling-fail-overlay">
+  <div class="modal">
+    <div class="big-icon">❌</div>
+    <h2>구조 실패!</h2>
+    <p>이 나무에는 둥지가 없어요.</p>
+    <div class="tip-box">
+      🌿 <strong>새를 구조하는 올바른 방법</strong><br><br>
+      갓 부화한 아기새를 발견한 경우 주변에 있는 둥지를 찾아 둥지에 둡니다. 만약 둥지를 찾지 못했다면 인공 둥지를 만들어주세요.
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeNestlingFail(); resetNestling()">다시 도전</button>
+      <button class="btn" onclick="closeNestlingFail(); goStart()">처음으로</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="nestling-success-overlay">
+  <div class="modal">
+    <div class="big-icon"><span class="success-anim">🕊️</span></div>
+    <h2 style="color:var(--green-dark)">구조 성공! 🎉</h2>
+    <p>아기 새를 둥지로 돌려보냈어요!<br>어미 새가 날아와 감사 인사를 전합니다 🥰</p>
+    <p style="margin-top:10px; font-size:15px; color:#888; font-style:italic">"짹짹! 고마워요!"</p>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeNestlingSuccess(); resetNestling()">다시 하기</button>
+      <button class="btn" onclick="closeNestlingSuccess(); showRescue()">구조 유형 알아보기 →</button>
+      <button class="btn" onclick="closeNestlingSuccess(); goStart()">처음으로</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="fledgling-result-overlay">
+  <div class="modal">
+    <div class="big-icon" id="fl-icon"></div>
+    <h2 id="fl-title"></h2>
+    <p id="fl-msg"></p>
+    <div id="fl-tip" class="tip-box" style="display:none; text-align:left;">
+      🌿 <strong>새를 구조하는 올바른 방법</strong><br><br>
+      천적으로부터 아기새를 보호하고 안전하다면 근처 나뭇가지에 둡니다. 부모새가 오는지 관찰하다가 오지 않는다면 야생동물구조센터에 연락해주세요.
+    </div>
+    <div class="modal-actions">
+      <button class="btn primary" onclick="closeFledglingResult(); resetFledgling()">다시 하기</button>
+      <button class="btn" onclick="closeFledglingResult(); showRescue()">구조 유형 알아보기 →</button>
+      <button class="btn" onclick="closeFledglingResult(); goStart()">처음으로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── NAV ── */
+const SCREEN_NAMES = {
+  'start-screen': '홈',
+  'nestling-screen': '갓 부화한 새끼 새',
+  'fledgling-screen': '깃털이 조금 난 아기 새',
+  'rescue-screen': '구조 유형',
+  'endangered-screen': '천연기념물 & 멸종위기종'
+};
+let navStack = ['start-screen'];
+
+function updateBreadcrumb() {
+  const nav = document.getElementById('breadcrumb');
+  nav.innerHTML = navStack.map((id, i) => {
+    if (i < navStack.length - 1)
+      return `<span onclick="jumpTo(${i})">${SCREEN_NAMES[id]}</span><span class="sep">›</span>`;
+    return `<span style="color:var(--text-main); cursor:default">${SCREEN_NAMES[id]}</span>`;
+  }).join('');
+}
+
+function jumpTo(idx) {
+  navStack = navStack.slice(0, idx + 1);
+  showScreen(navStack[navStack.length - 1], false);
+}
+
+function showScreen(id, push = true) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (push) { navStack.push(id); } else {}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateBreadcrumb();
+}
+
+function goStart() {
+  clearInterval(fledglingTimer);
+  navStack = ['start-screen'];
+  showScreen('start-screen', false);
+}
+function showRescue() { showScreen('rescue-screen'); }
+function showEndangered() { showScreen('endangered-screen'); }
+
+/* ── TABS ── */
+function switchTab(key) {
+  document.querySelectorAll('.end-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.end-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + key).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ── NESTLING ── */
+function buildTrees() {
+  const scene = document.getElementById('scene');
+  scene.querySelectorAll('.tree-wrap').forEach(t => t.remove());
+
+  const TREE_COUNT = 12;
+  const nestIdx = Math.floor(Math.random() * TREE_COUNT);
+
+  const greens = ['#4caf50','#2e7d32','#66bb6a','#388e3c','#43a047','#1b5e20','#558b2f','#33691e'];
+  const darks  = ['#388e3c','#1b5e20','#4caf50','#2e7d32','#33691e','#1b5e20','#2e7d32','#255d00'];
+
+  const sceneW = scene.clientWidth  || 640;
+  const sceneH = scene.clientHeight || 420;
+  const groundY = sceneH * 0.55; // 풀밭 시작 y
+
+  // 배치된 나무 중심 좌표 저장 (겹침 방지)
+  const placed = [];
+  const MIN_DIST = 52;
+
+  function noOverlap(x, y) {
+    return placed.every(p => Math.hypot(p.x - x, p.y - y) > MIN_DIST);
+  }
+
+  for (let i = 0; i < TREE_COUNT; i++) {
+    const isNest = (i === nestIdx);
+    // 나무 크기: 30px ~ 70px (다양한 크기)
+    const size = 30 + Math.random() * 40;
+    const aspect = 150 / 76; // SVG 비율 유지
+    const svgW = size;
+    const svgH = size * aspect;
+
+    // 위치 시도 (최대 40회)
+    let x, y, tries = 0;
+    do {
+      x = 20 + Math.random() * (sceneW - 40);
+      // 나무 뿌리가 풀밭 위에 오도록 (sceneH*0.55 ~ sceneH - 10)
+      y = groundY + Math.random() * (sceneH - groundY - 10);
+      tries++;
+    } while (!noOverlap(x, y) && tries < 40);
+    placed.push({ x, y });
+
+    // 나무 색상 랜덤
+    const ci = Math.floor(Math.random() * greens.length);
+    const col  = greens[ci];
+    const dark = darks[ci];
+
+    const div = document.createElement('div');
+    div.className = 'tree-wrap';
+    // z-index: 아래(y 큰 것)가 앞에 오도록
+    div.style.left    = x + 'px';
+    div.style.bottom  = (sceneH - y) + 'px';
+    div.style.zIndex  = Math.round((y / sceneH) * 99) + 1;
+    div.onclick = () => clickTree(isNest);
+
+    // 둥지: SVG 좌표 내 위치를 크기에 맞게 스케일 (원래 viewBox 76x150 기준)
+    const nestScale = svgW / 76;
+    const nestGx = 14, nestGy = 58; // 원래 g transform 기준
+
+    div.innerHTML = `<svg viewBox="0 0 76 150" width="${svgW}" height="${svgH}">
+      <polygon points="38,8 72,90 4,90" fill="${col}"/>
+      <polygon points="38,28 66,98 10,98" fill="${dark}" opacity="0.75"/>
+      <rect x="32" y="90" width="12" height="52" fill="#795548"/>
+      ${isNest ? `<g transform="translate(${nestGx},${nestGy})">
+        <ellipse cx="22" cy="10" rx="18" ry="7" fill="#795548" stroke="#5d4037" stroke-width="1.5"/>
+        <ellipse cx="22" cy="8" rx="14" ry="4.5" fill="#a1887f"/>
+        <text x="10" y="15" font-size="13" font-family="serif">🥚</text>
+      </g>` : ''}
+    </svg>`;
+    scene.appendChild(div);
+  }
+}
+
+function startNestling() { showScreen('nestling-screen'); setTimeout(buildTrees, 50); }
+function resetNestling()  { buildTrees(); }
+
+function clickTree(isNest) {
+  if (isNest) document.getElementById('nestling-success-overlay').classList.add('active');
+  else        document.getElementById('nestling-fail-overlay').classList.add('active');
+}
+function closeNestlingFail()    { document.getElementById('nestling-fail-overlay').classList.remove('active'); }
+function closeNestlingSuccess() { document.getElementById('nestling-success-overlay').classList.remove('active'); }
+
+/* ── FLEDGLING ── */
+let fledglingTimer = null, tapCount = 0, secondsLeft = 15, gameOver = false;
+
+function startFledgling() { showScreen('fledgling-screen'); resetFledglingState(); setTimeout(moveCatRandom, 50); }
+function resetFledgling()  { resetFledglingState(); setTimeout(moveCatRandom, 50); }
+
+function moveCatRandom() {
+  const arena = document.getElementById('battle-arena');
+  const cat   = document.getElementById('cat');
+  const aw = arena.clientWidth,  ah = arena.clientHeight;
+  const margin = 60;
+  // 랜덤 위치 (arena 안에서 cat이 경계 밖으로 나가지 않도록)
+  const x = margin + Math.random() * (aw - margin * 2);
+  const y = margin + Math.random() * (ah - margin * 2);
+  // 터치 횟수에 따라 크기 변화 (50%~120%)
+  const minScale = 0.45, maxScale = 1.15;
+  const scale = maxScale - (tapCount / 10) * (maxScale - minScale);
+  // 가끔 뒤집기 (좌우 반전)
+  const flipX = Math.random() < 0.4 ? -1 : 1;
+  cat.style.left      = x + 'px';
+  cat.style.top       = y + 'px';
+  cat.style.transform = `translate(-50%, -50%) scaleX(${flipX}) scale(${scale})`;
+  cat.style.fontSize  = ''; // font-size는 scale로 제어
+}
+
+function resetFledglingState() {
+  clearInterval(fledglingTimer);
+  tapCount = 0; secondsLeft = 15; gameOver = false;
+  document.getElementById('hp-bar').style.width = '100%';
+  document.getElementById('hp-label').textContent = '고양이 체력 100%';
+  document.getElementById('timer-val').textContent = '15초';
+  document.getElementById('timer-val').classList.remove('danger');
+  document.getElementById('tap-val').textContent = '0 / 10';
+  const cat = document.getElementById('cat');
+  cat.textContent = '🐱';
+  cat.style.left = '50%'; cat.style.top = '45%';
+  cat.style.transform = 'translate(-50%, -50%) scale(1)';
+  document.getElementById('battle-arena').style.pointerEvents = 'auto';
+  document.getElementById('tap-hint').style.display = '';
+  fledglingTimer = setInterval(() => {
+    if (gameOver) return;
+    secondsLeft--;
+    document.getElementById('timer-val').textContent = secondsLeft + '초';
+    if (secondsLeft <= 5) document.getElementById('timer-val').classList.add('danger');
+    if (secondsLeft <= 0) { clearInterval(fledglingTimer); endFledgling(false); }
+  }, 1000);
+}
+
+function tapCat(e) {
+  if (gameOver) return;
+
+  // 고양이 현재 위치·크기 계산해서 클릭이 고양이 위에 있는지 확인
+  const arena = document.getElementById('battle-arena');
+  const cat   = document.getElementById('cat');
+  const arenaRect = arena.getBoundingClientRect();
+  const cx = parseFloat(cat.style.left  || '50%');
+  const cy = parseFloat(cat.style.top   || '45%');
+  const clickX = e.clientX - arenaRect.left;
+  const clickY = e.clientY - arenaRect.top;
+
+  // 현재 스케일 추출
+  const matchScale = (cat.style.transform || '').match(/scale\(([\d.]+)\)/);
+  const curScale = matchScale ? parseFloat(matchScale[1]) : 1.0;
+  const hitRadius = 55 * curScale; // 고양이 크기에 맞춘 히트박스
+
+  const dist = Math.hypot(clickX - cx, clickY - cy);
+  if (dist > hitRadius) {
+    // 빗나감 — 고양이가 비웃는 이펙트
+    const miss = document.createElement('div');
+    miss.className = 'hit-spark';
+    miss.textContent = ['😹','🙈','💨','😼'][Math.floor(Math.random()*4)];
+    miss.style.left = (clickX - 12) + 'px';
+    miss.style.top  = (clickY - 12) + 'px';
+    arena.appendChild(miss);
+    setTimeout(() => miss.remove(), 500);
+    return; // 타격 불인정
+  }
+
+  tapCount++;
+  const pct = Math.max(0, Math.round((1 - tapCount / 10) * 100));
+  document.getElementById('hp-bar').style.width = pct + '%';
+  document.getElementById('hp-label').textContent = '고양이 체력 ' + pct + '%';
+  document.getElementById('tap-val').textContent = tapCount + ' / 10';
+
+  // 히트 플래시
+  cat.classList.add('hit');
+  setTimeout(() => cat.classList.remove('hit'), 120);
+
+  // 스파크 이펙트
+  const spark = document.createElement('div');
+  spark.className = 'hit-spark';
+  spark.textContent = ['💥','✨','⚡','😿','💫','🔥'][Math.floor(Math.random()*6)];
+  spark.style.left = (clickX - 12) + 'px';
+  spark.style.top  = (clickY - 12) + 'px';
+  arena.appendChild(spark);
+  setTimeout(() => spark.remove(), 500);
+
+  if (tapCount >= 10) {
+    clearInterval(fledglingTimer);
+    cat.textContent = '🏃';
+    cat.style.transform = 'translate(-50%,-50%) scale(0.6)';
+    cat.style.left = '110%';
+    endFledgling(true);
+    return;
+  }
+
+  // 타격 후 고양이 즉시 랜덤 이동·크기 변경
+  moveCatRandom();
+}
+
+function endFledgling(win) {
+  gameOver = true;
+  document.getElementById('battle-arena').style.pointerEvents = 'none';
+  document.getElementById('tap-hint').style.display = 'none';
+  document.getElementById('fl-icon').textContent  = win ? '🎉' : '😢';
+  document.getElementById('fl-title').textContent = win ? '구조 성공!' : '구조 실패!';
+  document.getElementById('fl-title').style.color = win ? 'var(--green-dark)' : '#c62828';
+  document.getElementById('fl-msg').textContent   = win
+    ? '고양이를 쫓아냈어요! 아기 새가 안전해졌습니다 🐥💚\n깃털이 조금 난 아기 새는 어미 새의 보살핌을 받으며 날기를 배우는 중이에요.'
+    : '아기 새가 고양이에게 공격을 받았어요 😢\n더 빠르게 고양이를 터치해서 쫓아내야 해요!';
+  const tip = document.getElementById('fl-tip');
+  tip.style.display = win ? 'none' : 'block';
+  document.getElementById('fledgling-result-overlay').classList.add('active');
+}
+
+function closeFledglingResult() {
+  document.getElementById('fledgling-result-overlay').classList.remove('active');
+}
+
+// init breadcrumb
+updateBreadcrumb();
+</script>
+</body>
+</html>
